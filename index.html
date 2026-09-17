@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex,nofollow" />
+    <meta name="theme-color" content="#123024" />
+    <title>Postcodecalculator · Thissen</title>
+    <link rel="icon" type="image/svg+xml" href="brand/thissen-favicon.svg" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="locked">
+    <section id="login-screen" class="login-screen" aria-labelledby="login-title">
+      <div class="login-card">
+        <img class="login-logo" src="brand/thissen-favicon.svg" alt="Thissen" />
+        <p class="eyebrow">THISSEN · INTERN HULPMIDDEL</p>
+        <h1 id="login-title">Postcodecalculator</h1>
+        <p class="login-intro">Voer de toegangscode in om de calculator te openen.</p>
+        <form id="login-form" class="login-form" novalidate>
+          <label class="field" for="access-code">
+            <span>Toegangscode</span>
+            <input
+              id="access-code"
+              name="access-code"
+              type="password"
+              inputmode="numeric"
+              autocomplete="off"
+              maxlength="4"
+              pattern="[0-9]{4}"
+              placeholder="••••"
+              aria-describedby="login-error"
+            />
+          </label>
+          <button id="login-button" type="submit" class="primary-button">Open calculator</button>
+          <small id="login-error" class="error" role="alert"></small>
+        </form>
+        <p class="login-footer">Creëert herinneringen sinds 1898</p>
+      </div>
+    </section>
+
+    <main id="calculator-app" aria-hidden="true">
+      <header class="hero">
+        <img class="brand-mark" src="brand/thissen-favicon.svg" alt="Thissen" />
+        <div>
+          <p class="eyebrow">THISSEN · INTERN HULPMIDDEL</p>
+          <h1>Postcodecalculator</h1>
+          <p class="intro">Geschatte snelste rijafstand vanaf Nijverheidsstraat 62, 2160 Wommelgem.</p>
+        </div>
+      </header>
+
+      <section class="calculator-card" aria-labelledby="single-title">
+        <div class="section-heading">
+          <div>
+            <p class="step">SNELLE BEREKENING</p>
+            <h2 id="single-title">Waar moet de rit naartoe?</h2>
+          </div>
+          <span class="origin-pill">Vertrek · 2160 Wommelgem</span>
+        </div>
+
+        <div class="cost-settings" aria-labelledby="settings-title">
+          <div class="settings-heading">
+            <div>
+              <p class="step">TRANSPORTINSTELLINGEN</p>
+              <h3 id="settings-title">Voertuig en verplaatsingsuren</h3>
+            </div>
+            <p>Totale kost = voertuigkost + uurloon tijdens de verplaatsing.</p>
+          </div>
+          <div class="controls-grid">
+            <fieldset class="field vehicle-field">
+              <legend>Voertuigcategorie</legend>
+              <div class="segmented-control">
+                <label><input type="radio" name="vehicle" value="truck" checked /><span>Vrachtwagen</span></label>
+                <label><input type="radio" name="vehicle" value="van" /><span>Bestelwagen</span></label>
+              </div>
+              <small id="vehicle-profile-note" class="vehicle-profile-note">3,5–12 t · Euro VI · CO₂-klasse 1 · rijtijd +12%</small>
+            </fieldset>
+            <label class="field">
+              <span>Kostprijs voertuig</span>
+              <div class="money-input">
+                <span>€</span>
+                <input id="km-rate" type="number" min="0" step="0.01" value="0.55" inputmode="decimal" />
+                <span>/ km</span>
+              </div>
+            </label>
+            <label class="field">
+              <span>Uurloon verplaatsing</span>
+              <div class="money-input">
+                <span>€</span>
+                <input id="hourly-rate" type="number" min="0" step="0.50" value="35" inputmode="decimal" />
+                <span>/ u / technieker</span>
+              </div>
+            </label>
+            <fieldset class="field">
+              <legend>Aantal techniekers</legend>
+              <div class="segmented-control">
+                <label><input type="radio" name="technicians" value="1" checked /><span>1 technieker</span></label>
+                <label><input type="radio" name="technicians" value="2" /><span>2 techniekers</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="field basis-field">
+              <legend>Kostenbasis</legend>
+              <div class="segmented-control">
+                <label><input type="radio" name="basis" value="single" checked /><span>Enkele rit</span></label>
+                <label><input type="radio" name="basis" value="return" /><span>Retour</span></label>
+              </div>
+            </fieldset>
+          </div>
+        </div>
+
+        <form id="single-form" class="single-form" novalidate>
+          <label class="field postcode-field">
+            <span>Belgische postcode</span>
+            <div class="input-with-button">
+              <input
+                id="postcode"
+                name="postcode"
+                inputmode="numeric"
+                autocomplete="postal-code"
+                maxlength="4"
+                pattern="[0-9]{4}"
+                placeholder="Bijv. 9000"
+                aria-describedby="postcode-error"
+              />
+              <button type="submit" class="primary-button">Bereken rit</button>
+            </div>
+            <small id="postcode-error" class="error" role="alert"></small>
+          </label>
+        </form>
+
+        <div id="single-result" class="result-panel" hidden aria-live="polite">
+          <div class="result-heading">
+            <div class="result-identity">
+              <h3 id="result-place"></h3>
+              <div class="result-meta">
+                <span id="result-postcode" class="result-postcode"></span>
+                <span class="zone-badge">
+                  <strong id="result-zone"></strong>
+                  <small id="result-zone-range"></small>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="metric-grid">
+            <article class="metric featured">
+              <span>Enkele rit</span>
+              <strong id="result-distance"></strong>
+              <small><b>km</b> · naar postcodecentrum</small>
+            </article>
+            <article class="metric">
+              <span>Heen &amp; terug</span>
+              <strong id="result-return"></strong>
+              <small><b>km</b> · 2 × enkele rit</small>
+            </article>
+            <article class="metric">
+              <span>Geschatte rijtijd</span>
+              <strong id="result-duration"></strong>
+              <small id="result-duration-note"></small>
+            </article>
+            <article class="metric cost-metric">
+              <span>Totale transportkost</span>
+              <strong id="result-cost"></strong>
+              <small id="result-cost-note"></small>
+            </article>
+          </div>
+          <div class="cost-breakdown">
+            <span>Voertuig: <strong id="result-vehicle-cost"></strong></span>
+            <span id="result-toll-wrap"><span id="result-toll-label">Geschatte tolkost</span>: <strong id="result-toll-cost"></strong></span>
+            <span>Uurloon verplaatsing: <strong id="result-labour-cost"></strong></span>
+          </div>
+        </div>
+      </section>
+
+      <section class="batch-card" aria-labelledby="batch-title">
+        <div class="section-heading batch-heading">
+          <div>
+            <p class="step">MEERDERE POSTCODES</p>
+            <h2 id="batch-title">Bereken een volledige lijst</h2>
+          </div>
+          <button id="download-csv" type="button" class="secondary-button" disabled>Download CSV</button>
+        </div>
+
+        <label class="field batch-input-field">
+          <span>Plak postcodes</span>
+          <textarea id="batch-input" rows="3" placeholder="2000, 1000, 9000, 3500"></textarea>
+          <small>Gescheiden door komma’s, spaties of nieuwe regels.</small>
+        </label>
+        <div class="batch-actions">
+          <button id="batch-calculate" type="button" class="primary-button">Bereken lijst</button>
+          <p id="batch-message" class="batch-message" aria-live="polite"></p>
+        </div>
+
+        <div class="table-wrap" id="table-wrap" hidden>
+          <table>
+            <thead>
+              <tr>
+                <th>Postcode</th>
+                <th>Gemeente</th>
+                <th>Zone</th>
+                <th class="numeric">Enkele rit</th>
+                <th class="numeric">Heen &amp; terug</th>
+                <th class="numeric">Rijtijd</th>
+                <th class="numeric">Tol</th>
+                <th class="numeric">Transportkost</th>
+              </tr>
+            </thead>
+            <tbody id="batch-results"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <footer>
+        <p><strong>Schatting voor offertegebruik.</strong> Route naar het geografische centrum van de postcode, afgerond op 0,1 km.</p>
+        <p>Bronnen: GeoNames, OpenStreetMap/OSRM en Viapass-tarieven vanaf 01/07/2026. De tolraming past het tarief van de bestemmingsregio toe; de werkelijke OBU-kost kan afwijken.</p>
+      </footer>
+    </main>
+    <script src="postcodes.js"></script>
+    <script src="app.js"></script>
+    <script src="login.js"></script>
+  </body>
+</html>
