@@ -17,6 +17,7 @@
 
   const postcodeInput = document.querySelector("#postcode");
   const postcodeError = document.querySelector("#postcode-error");
+  const suggestionList = document.querySelector("#destination-suggestions");
   const singleResult = document.querySelector("#single-result");
   const kmRateInput = document.querySelector("#km-rate");
   const hourlyRateInput = document.querySelector("#hourly-rate");
@@ -29,6 +30,20 @@
   let currentRows = [];
   let currentInvalid = [];
   let activeVehicle = "truck";
+  let selectedSuggestionIndex = -1;
+
+  const normalizeSearch = (value) => String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLocaleLowerCase("nl-BE")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+
+  const destinations = Object.entries(data).map(([postcode, row]) => ({
+    postcode,
+    place: row[0],
+    normalizedPlace: normalizeSearch(row[0]),
+  }));
 
   const parseNumber = (input) => Math.max(0, Number(String(input.value).replace(",", ".")) || 0);
   const getVehicle = () => document.querySelector('input[name="vehicle"]:checked').value;
@@ -76,6 +91,101 @@
       distance: row[1],
       duration: row[2] ?? Math.round((row[1] / 65) * 60),
     };
+  }
+
+  function matchingDestinations(query, limit = 8) {
+    const normalized = normalizeSearch(query);
+    if (!normalized) return [];
+    const numeric = /^\d+$/.test(normalized);
+    return destinations
+      .filter((destination) => numeric
+        ? destination.postcode.startsWith(normalized)
+        : destination.normalizedPlace.includes(normalized))
+      .sort((a, b) => {
+        if (numeric) return a.postcode.localeCompare(b.postcode, "nl-BE");
+        const aStarts = a.normalizedPlace.startsWith(normalized) ? 0 : 1;
+        const bStarts = b.normalizedPlace.startsWith(normalized) ? 0 : 1;
+        return aStarts - bStarts
+          || a.normalizedPlace.localeCompare(b.normalizedPlace, "nl-BE")
+          || a.postcode.localeCompare(b.postcode, "nl-BE");
+      })
+      .slice(0, limit);
+  }
+
+  function closeSuggestions() {
+    suggestionList.hidden = true;
+    suggestionList.replaceChildren();
+    postcodeInput.setAttribute("aria-expanded", "false");
+    postcodeInput.removeAttribute("aria-activedescendant");
+    selectedSuggestionIndex = -1;
+  }
+
+  function selectDestination(destination, calculate = false) {
+    postcodeInput.value = `${destination.postcode} · ${destination.place}`;
+    postcodeInput.dataset.postcode = destination.postcode;
+    postcodeError.textContent = "";
+    closeSuggestions();
+    if (calculate) showSingle(destination.postcode);
+  }
+
+  function setActiveSuggestion(index) {
+    const options = [...suggestionList.querySelectorAll('[role="option"]')];
+    if (!options.length) return;
+    selectedSuggestionIndex = (index + options.length) % options.length;
+    options.forEach((option, optionIndex) => {
+      const active = optionIndex === selectedSuggestionIndex;
+      option.classList.toggle("active", active);
+      option.setAttribute("aria-selected", String(active));
+    });
+    postcodeInput.setAttribute("aria-activedescendant", options[selectedSuggestionIndex].id);
+    options[selectedSuggestionIndex].scrollIntoView({ block: "nearest" });
+  }
+
+  function renderSuggestions() {
+    const query = postcodeInput.value.trim();
+    const matches = matchingDestinations(query);
+    suggestionList.replaceChildren();
+    selectedSuggestionIndex = -1;
+    if (!query || !matches.length) {
+      closeSuggestions();
+      return;
+    }
+
+    matches.forEach((destination, index) => {
+      const item = document.createElement("li");
+      item.id = `destination-option-${index}`;
+      item.className = "destination-option";
+      item.setAttribute("role", "option");
+      item.setAttribute("aria-selected", "false");
+
+      const place = document.createElement("strong");
+      place.textContent = destination.place;
+      const postcode = document.createElement("span");
+      postcode.textContent = destination.postcode;
+      item.append(place, postcode);
+      item.addEventListener("mousedown", (event) => event.preventDefault());
+      item.addEventListener("click", () => selectDestination(destination, true));
+      suggestionList.append(item);
+    });
+
+    suggestionList.hidden = false;
+    postcodeInput.setAttribute("aria-expanded", "true");
+  }
+
+  function resolveDestination(query) {
+    const storedPostcode = postcodeInput.dataset.postcode;
+    if (storedPostcode && postcodeInput.value === `${storedPostcode} · ${data[storedPostcode]?.[0]}`) {
+      return { postcode: storedPostcode };
+    }
+
+    const trimmed = query.trim();
+    if (/^\d{4}$/.test(trimmed) && data[trimmed]) return { postcode: trimmed };
+
+    const normalized = normalizeSearch(trimmed);
+    const exact = destinations.filter((destination) => destination.normalizedPlace === normalized);
+    if (exact.length === 1) return { postcode: exact[0].postcode };
+    if (exact.length > 1) return { ambiguous: exact };
+    return { matches: matchingDestinations(trimmed) };
   }
 
   function getConfig() {
@@ -327,12 +437,48 @@
 
   document.querySelector("#single-form").addEventListener("submit", (event) => {
     event.preventDefault();
-    showSingle(postcodeInput.value.trim());
+    const resolved = resolveDestination(postcodeInput.value);
+    if (resolved.postcode) {
+      const destination = destinations.find((item) => item.postcode === resolved.postcode);
+      if (destination) selectDestination(destination);
+      showSingle(resolved.postcode);
+      return;
+    }
+
+    if (resolved.ambiguous?.length) {
+      postcodeError.textContent = "Deze gemeentenaam heeft meerdere postcodes. Kies de juiste bestemming uit de lijst.";
+      renderSuggestions();
+      return;
+    }
+
+    postcodeError.textContent = resolved.matches?.length
+      ? "Kies een bestemming uit de lijst."
+      : "Geen Belgische gemeente of postcode gevonden.";
+    renderSuggestions();
+    singleResult.hidden = true;
   });
   postcodeInput.addEventListener("input", () => {
-    postcodeInput.value = postcodeInput.value.replace(/\D/g, "").slice(0, 4);
+    delete postcodeInput.dataset.postcode;
     postcodeError.textContent = "";
+    renderSuggestions();
   });
+  postcodeInput.addEventListener("keydown", (event) => {
+    const options = [...suggestionList.querySelectorAll('[role="option"]')];
+    if (event.key === "ArrowDown" && options.length) {
+      event.preventDefault();
+      setActiveSuggestion(selectedSuggestionIndex + 1);
+    } else if (event.key === "ArrowUp" && options.length) {
+      event.preventDefault();
+      setActiveSuggestion(selectedSuggestionIndex - 1);
+    } else if (event.key === "Enter" && selectedSuggestionIndex >= 0) {
+      event.preventDefault();
+      options[selectedSuggestionIndex].click();
+    } else if (event.key === "Escape") {
+      closeSuggestions();
+    }
+  });
+  postcodeInput.addEventListener("focus", renderSuggestions);
+  postcodeInput.addEventListener("blur", () => window.setTimeout(closeSuggestions, 120));
   document.querySelector("#batch-calculate").addEventListener("click", calculateBatch);
   batchInput.addEventListener("keydown", (event) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") calculateBatch();
@@ -353,7 +499,8 @@
   });
   downloadButton.addEventListener("click", downloadCsv);
 
-  postcodeInput.value = "2000";
+  postcodeInput.value = "2000 · Antwerpen";
+  postcodeInput.dataset.postcode = "2000";
   showSingle("2000");
   batchInput.value = "2000\n1000\n9000\n3500\n8000";
   calculateBatch();

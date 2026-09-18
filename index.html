@@ -6,13 +6,15 @@
     <meta name="robots" content="noindex,nofollow" />
     <meta name="theme-color" content="#123024" />
     <title>Postcodecalculator · Thissen</title>
-    <link rel="icon" type="image/svg+xml" href="brand/thissen-favicon.svg" />
+    <link rel="icon" type="image/x-icon" href="./favicon.ico?v=3" />
+    <link rel="icon" type="image/png" sizes="192x192" href="./brand/thissen-favicon.png?v=3" />
+    <link rel="apple-touch-icon" href="./brand/thissen-favicon.png?v=3" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body class="locked">
     <section id="login-screen" class="login-screen" aria-labelledby="login-title">
       <div class="login-card">
-        <img class="login-logo" src="brand/thissen-favicon.svg" alt="Thissen" />
+        <img class="login-logo" src="./brand/thissen-favicon.png?v=3" alt="Thissen" width="76" height="96" />
         <p class="eyebrow">THISSEN · INTERN HULPMIDDEL</p>
         <h1 id="login-title">Postcodecalculator</h1>
         <p class="login-intro">Voer de toegangscode in om de calculator te openen.</p>
@@ -40,7 +42,7 @@
 
     <main id="calculator-app" aria-hidden="true">
       <header class="hero">
-        <img class="brand-mark" src="brand/thissen-favicon.svg" alt="Thissen" />
+        <img class="brand-mark" src="./brand/thissen-favicon.png?v=3" alt="Thissen" width="60" height="76" />
         <div>
           <p class="eyebrow">THISSEN · INTERN HULPMIDDEL</p>
           <h1>Postcodecalculator</h1>
@@ -108,23 +110,31 @@
         </div>
 
         <form id="single-form" class="single-form" novalidate>
-          <label class="field postcode-field">
-            <span>Belgische postcode</span>
-            <div class="input-with-button">
+          <label class="field postcode-field" for="postcode">
+            <span>Gemeente of Belgische postcode</span>
+          </label>
+          <div class="input-with-button">
+            <div class="destination-search">
               <input
                 id="postcode"
                 name="postcode"
-                inputmode="numeric"
-                autocomplete="postal-code"
-                maxlength="4"
-                pattern="[0-9]{4}"
-                placeholder="Bijv. 9000"
-                aria-describedby="postcode-error"
+                type="search"
+                inputmode="search"
+                autocomplete="off"
+                maxlength="60"
+                placeholder="Bijv. Gent of 9000"
+                role="combobox"
+                aria-autocomplete="list"
+                aria-controls="destination-suggestions"
+                aria-expanded="false"
+                aria-describedby="postcode-help postcode-error"
               />
-              <button type="submit" class="primary-button">Bereken rit</button>
+              <ul id="destination-suggestions" class="destination-suggestions" role="listbox" hidden></ul>
             </div>
-            <small id="postcode-error" class="error" role="alert"></small>
-          </label>
+            <button type="submit" class="primary-button">Bereken rit</button>
+          </div>
+          <small id="postcode-help" class="field-help">Zoek op postcode of gemeente en kies de juiste bestemming.</small>
+          <small id="postcode-error" class="error" role="alert"></small>
         </form>
 
         <div id="single-result" class="result-panel" hidden aria-live="polite">
